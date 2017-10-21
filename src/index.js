@@ -9,7 +9,7 @@ import Server from './server';
 
 const logger = new Logger('SLAVE');
 
-const A = () => (
+const fake = () => (
   chance => ({
     name: chance.name(),
     email: chance.email({ length: 10, domain: 'gmail.com' }),
@@ -18,7 +18,7 @@ const A = () => (
       street: chance.address(),
       city: chance.city(),
       state: 'CA',
-      zip: chance.integer({min: 90001, max: 96162}),
+      zip: chance.integer({ min: 90001, max: 96162 }),
       phone: chance.phone({ formatted: false })
     },
     website: chance.domain(),
@@ -248,93 +248,11 @@ const run = async (data, res = []) => {
 
   logger.success(tag);
 
-  const tryThis = async () => {
-    await chrome.navigate({ url: 'https://affiliate-program.amazon.com/gp/flex/advertising/api/sign-in.html' });
-    await chrome.evaluate(({ document }, { data }) => {
-      document.getElementById('ap_email').value = data.email;
-      document.getElementById('ap_password').value = data.password;
-      document.getElementById('signInSubmit').click();
-    }, { data });
+  await chrome.navigate({ url: 'https://affiliate-program.amazon.com/gp/flex/advertising/api/sign-in.html' });
 
-    await chrome.untilLoaded();
-    const captcha2Uri = await chrome.evaluate(({ document }, { data }) => {
-      document.getElementsByName('storeDescription')[0].value = data.description;
-      document.getElementsByName('paapiOptIn')[0].click();
-      return document.getElementsByName('captchaId')[0].parentElement.children[0].src;
-    }, { data });
+  const { awsId, awsSecret } = await chrome.evaluateAsync(async ({ document, window }) => {
+    document.getElementById('ac-paapi-action-create-account-button').click();
 
-    logger.success(captcha2Uri);
-
-    const { body: { responses: [{ fullTextAnnotation: { text: captcha2 } }] } } = await rp({
-      uri: `https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`,
-      json: true,
-      resolveWithFullResponse: true,
-      method: 'POST',
-      body: {
-        requests: [{
-          image: { source: { imageUri: captcha2Uri } },
-          features: [ { type: 'TEXT_DETECTION' } ]
-        }]
-      }
-    });
-
-    await chrome.evaluate(({ document, window }, { captcha2 }) => {
-      document.getElementById('captchaResponse').value = captcha2.replace(/\s/g, '').toLowerCase();
-      document.getElementById('submit').click();
-    }, { captcha2 });
-
-    await chrome.untilLoaded();
-    const res = await chrome.evaluate(({ document }) => {
-      try {
-        Array.prototype.find.call(
-          document.querySelectorAll('.managedContent a'),
-          e => e.textContent === 'Manage Your Account'
-        ).click();
-        return true;
-      } catch (e) {
-        return false;
-      }
-    });
-    if (!res) tryThis();
-  };
-
-  await tryThis();
-
-  await chrome.untilLoaded();
-  await chrome.evaluate(({ document }) => {
-    Array.prototype.find.call(
-      document.querySelectorAll('.managedContent a'),
-      e => e.textContent === 'AWS Security Credentials Console'
-    ).click();
-  });
-
-  await chrome.untilLoaded();
-  await chrome.evaluate(({ document }, { data }) => {
-    document.getElementById('ap_email').value = data.email;
-    document.getElementById('ap_password').value = data.password;
-    document.getElementById('signInSubmit-input').click();
-  }, { data });
-
-  await chrome.untilLoaded();
-  while (true) {
-    const title = await chrome.evaluate(({ document }) => {
-      return document.title;
-    });
-    logger.warn(title);
-    if (title === 'IAM Management Console') {
-      break;
-    } else if (title === 'Amazon Web Services Sign In') {
-      await chrome.evaluate(({ document }, { data }) => {
-        document.getElementById('ap_email').value = data.email;
-        document.getElementById('ap_password').value = data.password;
-        document.getElementById('signInSubmit-input').click();
-      }, { data });
-      await chrome.untilLoaded();
-    } else {
-      await chrome.navigate({ url: 'https://console.aws.amazon.com/iam/home?region=us-east-2#/security_credential' });
-    }
-  }
-  const creds = await chrome.evaluateAsync(async ({ document, window }) => {
     const waitElemToExist = condition => new Promise(resolve => {
       const observer = new window.MutationObserver(mutations =>
         mutations.forEach(({ addedNodes }) => {
@@ -359,23 +277,23 @@ const run = async (data, res = []) => {
       });
     });
 
-    await waitElemToExist(node => node.id === 'modal-content');
-    document.getElementById('continue').click();
-    document.querySelector('#access_key_section button').click();
+    await waitElemToExist(node => node.getAttribute && node.getAttribute('class') === 'ac-paapi-create-credentials');
 
-    await waitElemToExist(node => node.getAttribute && node.getAttribute('class') === 'successText');
-    return document.getElementsByClassName('userCredentials')[0].textContent.split(/\s/).filter(x => x.length > 6);
+    return {
+      awsId: document.getElementById('ac-paapi-access-key').value,
+      awsSecret: document.getElementById('ac-paapi-secret-key').value
+    };
   });
 
-  res.push(`{ awsId: '${creds[0]}', awsSecret: '${creds[1]}', assocId: '${tag.match(/[^\s]+-20/)[0]}' },`);
+  res.push(`{ awsId: '${awsId}', awsSecret: '${awsSecret}', assocId: '${tag.match(/[^\s]+-20/)[0]}' },`);
   logger.success(logger.bold('\n' + res.join('\n')));
   await chrome.kill();
 
-  await run(A(), res);
+  await run(fake(), res);
 
   Server.kill();
 };
 
 
-run(A())
+run(fake())
   .then(console.log, console.error);
