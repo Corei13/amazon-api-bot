@@ -2,9 +2,21 @@
 Automagically generate amazon product advertising api credentials!
 
 # Installation
+To install globally, run
 ```
 npm install -g amazon-api-bot
 ```
+If you face any **EACCES** error when you try to install this package globally, follow [this guide](https://docs.npmjs.com/getting-started/fixing-npm-permissions) as npm suggests.
+
+You can also try without installing globally.
+```
+git clone https://github.com/Corei13/amazon-api-bot.git
+cd amazon-api-bot
+npm install
+npm build
+node lib/index.js
+```
+
 
 # Getting Started
 Before using amazon-api-bot, you'll need
