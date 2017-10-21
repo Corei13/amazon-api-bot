@@ -289,10 +289,21 @@ const run = async data => {
     awsSecret: '${awsSecret}',
     assocId: '${tag.match(/[^\s]+-20/)[0]}'
   }`));
+
   await chrome.kill();
+
+  return {
+    assocId: tag.match(/[^\s]+-20/)[0],
+    awsId,
+    awsSecret
+  };
 };
 
 
 run(fake())
-  .catch(logger.error)
+  .then(({ assocId, awsId, awsSecret }) => {
+    console.log('Associate Tag:', assocId);
+    console.log('Access Key:', awsId);
+    console.log('Secret Key:', awsSecret);
+  }, console.error)
   .then(() => Server.kill());

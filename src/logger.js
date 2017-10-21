@@ -9,7 +9,9 @@ const now = (): string => moment.utc().add(6, 'hours').format('YYYY/MM/DD HH:mm:
 
 const log = (
   args: Array<any>, fn: (_: mixed) => string = (arg: any): any => arg
-): void => console.log(fn(bold(`[${now()}]`)), ...args.map(fn));
+): void => process.env.DEBUG
+  ? console.log(fn(bold(`[${now()}]`)), ...args.map(fn))
+  : undefined;
 
 const debug: logFn = (...args) => log(args);
 const info: logFn  = (...args) => log(args, arg => cyan(arg));
