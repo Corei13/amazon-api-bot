@@ -7,7 +7,7 @@ import Chrome from './chrome';
 import Logger from './logger';
 import Server from './server';
 
-const logger = new Logger('SLAVE');
+const logger = new Logger('MAIN');
 
 const fake = () => (
   chance => ({
@@ -29,17 +29,20 @@ const fake = () => (
 
 const { TWILIO_NUMBER, VISION_API_KEY } = process.env;
 
-const run = async (data, res = []) => {
+const run = async data => {
+  if (!VISION_API_KEY) {
+    throw new Error('VISION_API_KEY is required.');
+  }
+
+  await Server.start();
+
   const chrome = new Chrome({ headless: false });
   const pid = await chrome.start();
   logger.info('Chrome started with pid:', pid);
 
-  logger.info(JSON.stringify(data, null, 2));
-
-
   // go to landing page
   await chrome.navigate({ url: 'https://affiliate-program.amazon.com/' });
-  logger.info('navigated to:', 'https://affiliate-program.amazon.com/');
+  logger.debug('Navigated to:', 'https://affiliate-program.amazon.com/');
   await chrome.evaluateAsync(({ document }) => {
     const click = resolve => {
       const node = document.getElementById('a-autoid-0-announce');
@@ -57,14 +60,14 @@ const run = async (data, res = []) => {
 
   // sign up step 1
   await chrome.untilLoaded();
-  logger.info('loaded sign in page');
+  logger.debug('Loaded sign in page');
   await chrome.evaluate(({ document }) => {
     document.getElementById('createAccountSubmit').click();
   }, { data });
 
   // sign up step 2
   await chrome.untilLoaded();
-  logger.info('loaded sign up page');
+  logger.debug('Loaded sign up page');
   await chrome.evaluate(({ document }, { data }) => {
     document.getElementById('ap_customer_name').value = data.name;
     document.getElementById('ap_email').value = data.email;
@@ -150,10 +153,8 @@ const run = async (data, res = []) => {
       }
     });
 
-    logger.success(captcha);
-
     // sign up step 2
-    logger.info('entering captcha');
+    logger.info('Entering captcha', captcha);
     const phoneCode = await chrome.evaluateAsync(async ({ document, window }, { captcha, phoneNo }) => {
       document.getElementById('ac-signup-sp-captcha_response').value = captcha.replace(/\s/g, '').toLowerCase();
       document.getElementById('ac-wizard-signup-next-btn-announce').click();
@@ -202,13 +203,11 @@ const run = async (data, res = []) => {
       return phoneCode;
     }, { captcha, phoneNo: TWILIO_NUMBER });
 
-    logger.warn('attempt:', attempt, 'code:', phoneCode);
+    logger.warn('Attempt:', attempt, 'Code:', phoneCode);
     return phoneCode || await solveCaptcha(attempt + 1);
   };
 
   const phoneCode = await solveCaptcha();
-  logger.success(phoneCode);
-  await Server.start();
   Server.verify(phoneCode);
 
   const tag = await chrome.evaluateAsync(async ({ document, window }) => {
@@ -246,7 +245,7 @@ const run = async (data, res = []) => {
     return tag;
   });
 
-  logger.success(tag);
+  logger.info('Got associate tag:', tag.match(/[^\s]+-20/)[0]);
 
   await chrome.navigate({ url: 'https://affiliate-program.amazon.com/gp/flex/advertising/api/sign-in.html' });
 
@@ -285,15 +284,15 @@ const run = async (data, res = []) => {
     };
   });
 
-  res.push(`{ awsId: '${awsId}', awsSecret: '${awsSecret}', assocId: '${tag.match(/[^\s]+-20/)[0]}' },`);
-  logger.success(logger.bold('\n' + res.join('\n')));
+  logger.success(logger.bold(`{
+    awsId: '${awsId}',
+    awsSecret: '${awsSecret}',
+    assocId: '${tag.match(/[^\s]+-20/)[0]}'
+  }`));
   await chrome.kill();
-
-  await run(fake(), res);
-
-  Server.kill();
 };
 
 
 run(fake())
-  .then(console.log, console.error);
+  .catch(logger.error)
+  .then(() => Server.kill());

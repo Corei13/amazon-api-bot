@@ -29,7 +29,7 @@ export default class Logger {
   constructor(name?: string) {
     if (name) {
       this.name = name;
-      const wrap = fn => (...args) => fn(`${this.name}:`, ...args);
+      const wrap = fn => (...args) => fn(`(${this.name})`, ...args);
       this.debug = wrap(this.debug);
       this.info = wrap(this.info);
       this.warn = wrap(this.warn);

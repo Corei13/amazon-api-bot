@@ -10,6 +10,8 @@ import Logger from './logger';
 const logger = new Logger('SERVER');
 
 class CodeStore {
+  code: ?string = null;
+  resolve: ?Function = null;
   get = () => new Promise(resolve => {
     if (this.code) {
       resolve(this.code);
@@ -44,7 +46,7 @@ const server = () => {
       const twiml = new twilio.twiml.VoiceResponse();
       if (req.body.CallStatus === 'ringing') {
         const code = await codeStore.get();
-        logger.info('verify with code:', code);
+        logger.info('Verify with code:', code);
 
         twiml.say('', { voice: 'alice' });
         twiml.pause({ length: 2 });
@@ -71,10 +73,26 @@ const server = () => {
     logger.info(method, originalUrl, logger.bold(elapsed.toFixed(2)));
   });
 
-  const { PORT = 4000, TWILIO_SID, TWILIO_TOKEN, TWILIO_NUMBER } = process.env;
+  let server;
   const start = new Promise((resolve, reject) => {
-    app.listen(PORT, () => {
-      logger.info(`Server listening on port ${PORT}!`);
+    const { TWILIO_SID, TWILIO_TOKEN, TWILIO_NUMBER } = process.env;
+
+    if (!TWILIO_SID) {
+      throw new Error('TWILIO_SID is required.');
+    }
+
+    if (!TWILIO_TOKEN) {
+      throw new Error('TWILIO_TOKEN is required.');
+    }
+
+    if (!TWILIO_NUMBER) {
+      throw new Error('TWILIO_NUMBER is required.');
+    }
+
+    const PORT = process.env.PORT || 4000;
+
+    server = app.listen(PORT, () => {
+      logger.info(`Listening on port ${PORT}!`);
 
       ngrok.connect({ addr: PORT }, (err, url) => {
         if (err) {
@@ -98,12 +116,13 @@ const server = () => {
           });
       });
     });
+
   });
 
   return {
     start: () => start,
-    verify: code => codeStore.set(code),
-    kill: () => server.close()
+    verify: (code: string) => codeStore.set(code),
+    kill: () => Promise.all([ ngrok.kill(), server && server.close() ])
   };
 };
 

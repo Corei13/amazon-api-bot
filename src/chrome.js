@@ -5,6 +5,10 @@ import { Launcher as ChromeLauncher } from 'lighthouse/chrome-launcher/chrome-la
 import CDP from 'chrome-remote-interface';
 import { randomUserAgent } from './user-agents';
 
+import Logger from './logger';
+
+const logger = new Logger('CHROME');
+
 export default class Chrome extends ChromeLauncher {
   port: number;
   runs: number = 0;
@@ -12,19 +16,20 @@ export default class Chrome extends ChromeLauncher {
   listener: EventEmitter = new EventEmitter();
 
   constructor({
-    port = 9326, headless = false,
+    port = 9227, headless = false,
     height = 1280, width = 1696,
     proxy
   }: {
     port?: number, headless?: boolean,
-    height?: number, width?: number
+    height?: number, width?: number,
+    proxy?: string
   } = {}) {
     super({
       port,
       chromeFlags: [
         headless ? '--headless' : '',
         proxy ? `--proxy-server="${proxy}"` : '',
-        proxy ? '--host-resolver-rules="MAP * 0.0.0.0 , EXCLUDE 127.0.0.1"' : '',
+        proxy ? '--host-resolver-rules="MAP * 0.0.0.0 , EXCLUDE 127.0.0.1"' : '', // FIXME
         `--user-agent="${randomUserAgent()}"`,
         '--incognito',
         `--window-size=${height},${width}`,
@@ -41,7 +46,7 @@ export default class Chrome extends ChromeLauncher {
     await this.launch();
 
     const tabs = await CDP.List({ port: this.port });
-    console.log(tabs.find(t => t.type === 'page'));
+    // console.log(tabs.find(t => t.type === 'page'));
     this.protocol = await new Promise((resolve, reject) =>
       CDP({ port: this.port, target: tabs.find(t => t.type === 'page') }, protocol => resolve(protocol))
         .on('error', err => reject(Error('Cannot connect to Chrome:' + err)))
@@ -51,7 +56,6 @@ export default class Chrome extends ChromeLauncher {
     await Promise.all([Page.enable(), Runtime.enable()]);
 
     Page.loadEventFired((...args) => {
-      console.log('pageLoaded with', args);
       this.listener.emit('pageLoaded', ...args);
     });
 
@@ -62,7 +66,6 @@ export default class Chrome extends ChromeLauncher {
     return new Promise(resolve => {
       const listener = () => {
         this.listener.removeListener('pageLoaded', listener);
-        console.log('Holy shit! Page loaded');
         resolve();
       };
       this.listener.on('pageLoaded', listener);
@@ -79,15 +82,18 @@ export default class Chrome extends ChromeLauncher {
     return { connectedAt, loadedAt };
   }
 
-  async evaluate(fn: Function, context = {}, evaluateArgs = {}) {
+  async evaluate(fn: Function, context: Object = {}, evaluateArgs: Object = {}) {
     const { Runtime } = this.protocol;
     const expression = `(${fn.toString()})({ document, window }, ${JSON.stringify(context)})`;
     const result = await Runtime.evaluate({ expression, returnByValue: true, ...evaluateArgs });
-    console.log(result);
+    logger.info('Expression:');
+    logger.debug(expression);
+    logger.info('Result:');
+    logger.debug(result);
     return result.result.value;
   }
 
-  evaluateAsync(fn: Function, context = {}) {
+  evaluateAsync(fn: Function, context: Object = {}) {
     return this.evaluate(fn, context, { awaitPromise: true });
   }
 }
