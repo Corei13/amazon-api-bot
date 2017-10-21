@@ -6,7 +6,7 @@ To install globally, run
 ```
 npm install -g amazon-api-bot
 ```
-If you face any **EACCES** error when you try to install this package globally, follow [this guide](https://docs.npmjs.com/getting-started/fixing-npm-permissions) as npm suggests.
+If you face any **EACCES** error when you try to install this package globally, follow [this guide](https://docs.npmjs.com/getting-started/fixing-npm-permissions) to fix npm permissions.
 
 You can also try without installing globally.
 ```
@@ -14,9 +14,8 @@ git clone https://github.com/Corei13/amazon-api-bot.git
 cd amazon-api-bot
 npm install
 npm build
-node lib/index.js
+DEBUG=true node lib/index.js
 ```
-
 
 # Getting Started
 Before using amazon-api-bot, you'll need
@@ -36,5 +35,10 @@ export TWILIO_NUMBER=your_twilio_number
 
 Now run
 ```
-DEBUG=true amazon-api-bot
+DEBUG=true run-amazon-api-bot
+```
+
+Add HEADLESS=true to run with headless chrome
+```
+DEBUG=true HEADLESS=true run-amazon-api-bot
 ```

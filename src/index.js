@@ -38,7 +38,7 @@ const run = async data => {
 
   await Server.start();
 
-  const chrome = new Chrome({ headless: false });
+  const chrome = new Chrome({ headless: !!process.env.HEADLESS });
   const pid = await chrome.start();
   logger.info('Chrome started with pid:', pid);
 
