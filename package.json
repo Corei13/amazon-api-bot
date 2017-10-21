@@ -1,10 +1,10 @@
 {
   "name": "amazon-api-bot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Automagically generate amazon product advertising api credentials!",
   "repository": "https://github.com/Corei13/amazon-api-bot",
   "bin": {
-    "run-amazon-api-bot": "./cli.js"
+    "run-amazon-api-bot": "lib/index.js"
   },
   "scripts": {
     "node": "node_modules/.bin/babel-node",
@@ -12,7 +12,7 @@
     "lint": "node_modules/.bin/eslint .",
     "flow": "node_modules/flow-bin/cli.js",
     "build": "node_modules/.bin/babel src/ -d lib/ --copy-files",
-    "postinstall": "npm run build"
+    "precommit": "npm run build"
   },
   "author": "Dhananjoy Biswas",
   "keywords": [

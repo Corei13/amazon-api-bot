@@ -21,3 +21,8 @@ export TWILIO_SID=your_twilio_sid
 export TWILIO_TOKEN=your_twilio_token
 export TWILIO_NUMBER=your_twilio_number
 ```
+
+Now run
+```
+DEBUG=true amazon-api-bot
+```
