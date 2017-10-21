@@ -1,6 +1,8 @@
 # amazon-api-bot
 Automagically generate amazon product advertising api credentials!
 
+[![asciicast](https://asciinema.org/a/t4j5YDwEHmWvjSfrKdBTjFBJ3.png)](https://asciinema.org/a/t4j5YDwEHmWvjSfrKdBTjFBJ3)
+
 # Installation
 To install globally, run
 ```
@@ -33,12 +35,12 @@ export TWILIO_TOKEN=your_twilio_token
 export TWILIO_NUMBER=your_twilio_number
 ```
 
-Now run
+Now time for magic!
 ```
 DEBUG=true run-amazon-api-bot
 ```
 
-Add HEADLESS=true to run with headless chrome
+Add `HEADLESS=true` to run with headless chrome
 ```
 DEBUG=true HEADLESS=true run-amazon-api-bot
 ```
