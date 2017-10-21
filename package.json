@@ -1,6 +1,6 @@
 {
   "name": "amazon-api-bot",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "Automagically generate amazon product advertising api credentials!",
   "repository": "https://github.com/Corei13/amazon-api-bot",
   "bin": {
@@ -45,9 +45,9 @@
     "body-parser": "^1.17.1",
     "chalk": "^1.1.3",
     "chance": "^1.0.9",
+    "chrome-launcher": "^0.8.1",
     "chrome-remote-interface": "^0.23.2",
     "express": "^4.15.2",
-    "lighthouse": "^2.1.0",
     "ngrok": "^2.2.23",
     "request": "^2.81.0",
     "request-promise": "^4.2.0",

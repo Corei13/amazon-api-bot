@@ -1,7 +1,7 @@
 // @flow
 
 import EventEmitter from 'events';
-import { Launcher as ChromeLauncher } from 'lighthouse/chrome-launcher/chrome-launcher';
+import { launch } from 'chrome-launcher';
 import CDP from 'chrome-remote-interface';
 import { randomUserAgent } from './user-agents';
 
@@ -9,46 +9,54 @@ import Logger from './logger';
 
 const logger = new Logger('CHROME');
 
-export default class Chrome extends ChromeLauncher {
-  port: number;
+export default class Chrome {
   runs: number = 0;
   protocol: { Page: Object, Runtime: Object };
   listener: EventEmitter = new EventEmitter();
+  flags: Array<string> = [];
+  kill: Function = () => { throw Error('Not implemented'); };
 
   constructor({
-    port = 9227, headless = false,
-    height = 1280, width = 1696,
-    proxy
+    headless = false,
+    height = 900, width = 1440,
+    // proxy
   }: {
-    port?: number, headless?: boolean,
+    headless?: boolean,
     height?: number, width?: number,
-    proxy?: string
+    // proxy?: string
   } = {}) {
-    super({
-      port,
-      chromeFlags: [
-        headless ? '--headless' : '',
-        proxy ? `--proxy-server="${proxy}"` : '',
-        proxy ? '--host-resolver-rules="MAP * 0.0.0.0 , EXCLUDE 127.0.0.1"' : '', // FIXME
-        `--user-agent="${randomUserAgent()}"`,
-        '--incognito',
-        `--window-size=${height},${width}`,
-        '--disable-gpu',
-        '--enable-logging',
-        '--log-level=0',
-        '--v=99',
-      ]
-    });
-    this.port = port;
+    this.flags = [
+      headless ? '--headless' : '',
+      // proxy ? `--proxy-server="${proxy}"` : '',
+      // proxy ? '--host-resolver-rules="MAP * 0.0.0.0 , EXCLUDE 127.0.0.1"' : '', // FIXME
+      `--user-agent="${randomUserAgent()}"`,
+      '--incognito',
+      `--window-size=${height},${width}`,
+      '--disable-gpu',
+      '--enable-logging',
+      '--log-level=0',
+      '--v=99',
+      '--single-process', // fixme
+      '--no-sandbox',
+    ];
+  }
+
+  async launch() {
+    return new Promise((resolve, reject) =>
+      launch({
+        chromeFlags: this.flags
+      }).then(resolve, reject)
+    );
   }
 
   async start() {
-    await this.launch();
+    const chrome = await this.launch();
+    this.kill = () => chrome.kill();
 
-    const tabs = await CDP.List({ port: this.port });
+    const tabs = await CDP.List({ port: chrome.port });
     // console.log(tabs.find(t => t.type === 'page'));
     this.protocol = await new Promise((resolve, reject) =>
-      CDP({ port: this.port, target: tabs.find(t => t.type === 'page') }, protocol => resolve(protocol))
+      CDP({ port: chrome.port, target: tabs.find(t => t.type === 'page') }, protocol => resolve(protocol))
         .on('error', err => reject(Error('Cannot connect to Chrome:' + err)))
     );
 
@@ -59,7 +67,7 @@ export default class Chrome extends ChromeLauncher {
       this.listener.emit('pageLoaded', ...args);
     });
 
-    return this.pid;
+    return chrome.pid;
   }
 
   untilLoaded() {

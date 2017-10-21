@@ -13,6 +13,7 @@ const log = (
   ? console.log(fn(bold(`[${now()}]`)), ...args.map(fn))
   : undefined;
 
+
 const debug: logFn = (...args) => log(args);
 const info: logFn  = (...args) => log(args, arg => cyan(arg));
 const warn: logFn  = (...args) => log(args, arg => yellow(arg));
