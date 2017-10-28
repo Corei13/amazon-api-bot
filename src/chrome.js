@@ -36,7 +36,7 @@ export default class Chrome {
       '--log-level=0',
       '--v=99',
 	    // '--single-process', // fixme
-	    // '--no-sandbox',
+	    '--no-sandbox'
     ];
   }
 
