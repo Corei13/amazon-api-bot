@@ -40,7 +40,7 @@ export default class Controller {
   server: Object;
   ngrokUrl: string;
 
-  constructor({ port = 4000, twilio, visionApiKey }: { port?: number, twilio?: { sid?: string, token?: string }, visionApiKey?: string } = {}) {
+  constructor({ port = process.env.PORT || 4000, twilio, visionApiKey }: { port?: number, twilio?: { sid?: string, token?: string }, visionApiKey?: string } = {}) {
     this.port = port;
     this.twilio = { ...twilio, numbers: [] };
     this.visionApiKey = visionApiKey;
