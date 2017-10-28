@@ -15,7 +15,7 @@ You can also try without installing globally.
 git clone https://github.com/Corei13/amazon-api-bot.git
 cd amazon-api-bot
 npm install
-npm build
+npm run build
 DEBUG=true node lib/index.js
 ```
 

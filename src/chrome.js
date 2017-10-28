@@ -30,14 +30,13 @@ export default class Chrome {
       // proxy ? `--proxy-server="${proxy}"` : '',
       // proxy ? '--host-resolver-rules="MAP * 0.0.0.0 , EXCLUDE 127.0.0.1"' : '', // FIXME
       `--user-agent="${randomUserAgent()}"`,
-      '--incognito',
       `--window-size=${height},${width}`,
       '--disable-gpu',
       '--enable-logging',
       '--log-level=0',
       '--v=99',
-      '--single-process', // fixme
-      '--no-sandbox',
+	    // '--single-process', // fixme
+	    // '--no-sandbox',
     ];
   }
 
