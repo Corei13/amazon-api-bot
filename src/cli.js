@@ -3,7 +3,7 @@
 // @flow
 import Controller from './controller';
 
-if (process.env.DAEMON) {
+if (!!process.env.DAEMON) {
   const controller = new Controller();
   controller.start();
 } else {

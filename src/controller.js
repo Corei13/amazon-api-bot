@@ -175,7 +175,8 @@ export default class Controller {
         this.ngrokUrl = url;
         this.server = app.listen(this.port, () => {
           logger.info(`Listening on port ${this.port}!`);
-          this.server.setTimeout(300000, resolve);
+          this.server.setTimeout(300000);
+          resolve();
         });
       });
     });
