@@ -24,6 +24,8 @@ export type Data = {
   description: string
 };
 
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 export const fake = (): Data => (
   chance => ({
     name: chance.name(),
@@ -154,6 +156,10 @@ export const generate = async ({
     }, { data });
 
     const solveCaptcha = async (attempt = 0) => {
+      if (attempt === 5) {
+        throw new Error('Too many attempts!');
+      }
+
       const imageUri = await chrome.evaluate(({ document }) => {
         return document.getElementById('ac-signup-sp-captcha').children[0].src;
       });
@@ -222,7 +228,7 @@ export const generate = async ({
       }, { captcha, phoneNo });
 
       logger.warn('Attempt:', attempt, 'Code:', phoneCode);
-      return phoneCode || await solveCaptcha(attempt + 1);
+      return phoneCode || await delay(1000).then(() => solveCaptcha(attempt + 1));
     };
 
     const phoneCode = await solveCaptcha();
