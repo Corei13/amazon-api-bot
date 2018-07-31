@@ -93,10 +93,6 @@ export default class Chrome {
     const { Runtime } = this.protocol;
     const expression = `(${fn.toString()})({ document, window }, ${JSON.stringify(context)})`;
     const result = await Runtime.evaluate({ expression, returnByValue: true, ...evaluateArgs });
-    logger.info('Expression:');
-    logger.debug(expression);
-    logger.info('Result:');
-    logger.debug(result);
     return result.result.value;
   }
 

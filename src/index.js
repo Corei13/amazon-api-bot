@@ -16,7 +16,7 @@ export type Data = {
     street: string,
     city: string,
     state: string,
-    zip: number,
+    zip: string,
     phone: string
   },
   website: string,
@@ -32,10 +32,10 @@ export const fake = (): Data => (
     email: chance.email({ length: 10, domain: 'gmail.com' }),
     password: chance.string({ length: 10 }),
     address: {
-      street: chance.address(),
-      city: chance.city(),
-      state: 'CA',
-      zip: chance.integer({ min: 90001, max: 96162 }),
+      street: '1002 FRANKFORD AVE', // chance.address(),
+      city: 'Lubbock', // chance.city(),
+      state: 'TX',
+      zip: '79416-5056', // chance.integer({ min: 90001, max: 96162 }),
       phone: chance.phone({ formatted: false })
     },
     website: chance.domain(),
@@ -164,7 +164,7 @@ export const generate = async ({
         return document.getElementById('ac-signup-sp-captcha').children[0].src;
       });
 
-      const { body: { responses: [{ fullTextAnnotation: { text: captcha } }] } } = await rp({
+      const res = await rp({
         uri: `https://vision.googleapis.com/v1/images:annotate?key=${visionApiKey}`,
         json: true,
         resolveWithFullResponse: true,
@@ -172,15 +172,27 @@ export const generate = async ({
         body: {
           requests: [{
             image: { source: { imageUri } },
-            features: [ { type: 'TEXT_DETECTION' } ]
+            features: [ { type: 'TEXT_DETECTION' } ],
+            imageContext: { languageHints: [ 'en' ] }
+          }, {
+            image: { source: { imageUri } },
+            features: [ { type: 'DOCUMENT_TEXT_DETECTION' } ],
+            imageContext: { languageHints: [ 'en' ] }
           }]
         }
       });
+      const { body: { responses: [
+        { fullTextAnnotation: { text: captcha1 } = {} },
+        { fullTextAnnotation: { text: captcha2 } = {} }
+      ] } } = res;
+
+      const captcha = captcha1 || captcha2;
+      logger.info(imageUri, captcha1, captcha2);
 
       // sign up step 2
       logger.info('Entering captcha', captcha);
       const phoneCode = await chrome.evaluateAsync(async ({ document, window }, { captcha, phoneNo }) => {
-        document.getElementById('ac-signup-sp-captcha_response').value = captcha.replace(/\s/g, '').toLowerCase();
+        document.getElementById('ac-signup-sp-captcha_response').value = captcha.replace(/\s/g, '').toLowerCase().substr(-6);
         document.getElementById('ac-wizard-signup-next-btn-announce').click();
         const waitElemToExist = condition => new Promise((resolve, reject) => {
           const observer = new window.MutationObserver(mutations => {

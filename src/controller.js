@@ -152,8 +152,10 @@ export default class Controller {
           logger.info('Verify with code:', code);
 
           twiml.say('', { voice: 'alice' });
-          twiml.pause({ length: 2 });
-          twiml.play({ digits: code });
+          twiml.pause({ length: 9 });
+          twiml.say(String(code).split('').join('   '), { voice: 'alice' });
+          const digits = 'ww' + String(code).split('').join('ww');
+          twiml.play({ digits });
           twiml.record();
         }
 
