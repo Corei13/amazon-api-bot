@@ -1,8 +1,7 @@
 # amazon-api-bot
 Automagically generate amazon product advertising api credentials!
 
-[![asciicast](https://asciinema.org/a/t4j5YDwEHmWvjSfrKdBTjFBJ3.png)](https://asciinema.org/a/t4j5YDwEHmWvjSfrKdBTjFBJ3)
-
+[![asciicast](https://asciinema.org/a/t4j5YDwEHmWvjSfrKdBTjFBJ3.svg)](https://asciinema.org/a/t4j5YDwEHmWvjSfrKdBTjFBJ3)
 # Installation
 To install globally, run
 ```
